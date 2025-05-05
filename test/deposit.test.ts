@@ -5,29 +5,42 @@ axios.defaults.validateStatus = () => true;
 const BASE_URL = 'http://localhost:3000'; //todo: put this on axios client singleton
 
 test('Deve adicionar fundos a uma conta', async () => {
+  const inputSignup = {
+    name: 'John Doe',
+    email: 'john.doe@gmail.com',
+    document: '97456321558',
+    password: 'asdQWE123',
+  };
+  const responseSignup = await axios.post(
+    'http://localhost:3000/signup',
+    inputSignup
+  );
+
   const inputDeposit = {
-    accountId: 'RANDOM_UUID',
-    assetId: 'RANDOM_ASSET_ID',
+    accountId: responseSignup.data.accountId,
+    assetId: 'BTC',
     quantity: 10,
   };
-
   const { status } = await axios.post(`${BASE_URL}/deposit`, inputDeposit);
-
   expect(status).toBe(200);
-  // todo: talvez verificar se o saldo realmente foi atualizado.
+  // todo: talvez verificar o saldo
 });
 
 test('A conta deve existir', async () => {
-  const inputDeposit = {
-    accountId: 'RANDOM_UUID',
-    assetId: 'RANDOM_ASSET_ID',
-    quantity: 10,
+  const inputSignup = {
+    name: 'John Doe',
+    email: 'john.doe@gmail.com',
+    document: '97456321558',
+    password: 'asdQWE123',
   };
-
-  const { data: userAccount, status } = await axios.get(
-    `${BASE_URL}/accounts/${inputDeposit.accountId}`
+  const responseSignup = await axios.post(
+    'http://localhost:3000/signup',
+    inputSignup
   );
 
-  expect(status).toBe(200);
-  expect(userAccount).toBeDefined();
+  const responseGetAccount = await axios.post(
+    `http://localhost:3000/accounts/${responseSignup.data.accountId}`
+  );
+
+  expect(responseGetAccount.data).toBeDefined(); // todo: assim?
 });

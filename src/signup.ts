@@ -42,6 +42,7 @@ app.post('/signup', async (req: Request, res: Response) => {
       error: 'Invalid document',
     });
   }
+  //todo: avoid plaintext here!
   if (!isValidPassword(input.password)) {
     return res.status(422).json({
       error: 'Invalid password',
@@ -83,6 +84,20 @@ app.get('/accounts/:accountId', async (req: Request, res: Response) => {
 });
 
 app.post('/deposit', async (req: Request, res: Response) => {
+  const { accountId, assetId, quantity } = req.body;
+
+  await connection.query(
+    `INSERT INTO ccca.account_asset (account_id, asset_id, quantity)
+   VALUES ($1, $2, $3)
+   ON CONFLICT (account_id, asset_id)
+   DO UPDATE SET quantity = ccca.account_asset.quantity + EXCLUDED.quantity`,
+    [accountId, assetId, quantity]
+  );
+
+  return res.json({ status: 'ok' });
+});
+
+app.get('/health', async (req, res) => {
   return res.json({ status: 'ok' });
 });
 
