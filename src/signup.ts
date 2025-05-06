@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import crypto from 'crypto';
 import pgp from 'pg-promise';
 import { validateCpf } from './validateCpf';
+import axios from 'axios';
 
 const app = express();
 app.use(express.json());
@@ -67,9 +68,7 @@ app.post('/signup', async (req: Request, res: Response) => {
       account.password,
     ]
   );
-  res.json({
-    accountId,
-  });
+  res.json({ accountId });
 });
 
 // todo: return status code correctly
@@ -80,11 +79,33 @@ app.get('/accounts/:accountId', async (req: Request, res: Response) => {
     'select * from ccca.account where account_id = $1',
     [accountId]
   );
+
+  if (!accountData) {
+    return res.status(404).json({
+      // todo: correct code here?
+      error: 'Account not found',
+    });
+  }
   res.json(accountData);
 });
 
 app.post('/deposit', async (req: Request, res: Response) => {
   const { accountId, assetId, quantity } = req.body;
+  const accountOutput = await axios.get(
+    `http://localhost:3000/accounts/${accountId}`
+  );
+
+  if (accountOutput.data.error) {
+    return res.status(422).json({
+      error: 'Invalid accountId',
+    });
+  }
+
+  if (assetId !== 'BTC' && assetId !== 'USD') {
+    return res.status(422).json({
+      error: 'Invalid assetId',
+    });
+  }
 
   await connection.query(
     `INSERT INTO ccca.account_asset (account_id, asset_id, quantity)
@@ -94,7 +115,7 @@ app.post('/deposit', async (req: Request, res: Response) => {
     [accountId, assetId, quantity]
   );
 
-  return res.json({ status: 'ok' });
+  return res.json({ status: 'ok' }).status(200);
 });
 
 app.get('/health', async (req, res) => {

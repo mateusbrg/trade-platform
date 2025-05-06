@@ -4,7 +4,7 @@ axios.defaults.validateStatus = () => true;
 
 const BASE_URL = 'http://localhost:3000'; //todo: put this on axios client singleton
 
-test('Deve adicionar fundos a uma conta', async () => {
+test.only('Deve adicionar fundos a uma conta', async () => {
   const inputSignup = {
     name: 'John Doe',
     email: 'john.doe@gmail.com',
@@ -42,5 +42,28 @@ test('A conta deve existir', async () => {
     `http://localhost:3000/accounts/${responseSignup.data.accountId}`
   );
 
-  expect(responseGetAccount.data).toBeDefined(); // todo: assim?
+  expect(responseGetAccount.data).toBeDefined(); // todo: assim? Acho que não!
+});
+
+test('O assetId permitido é apenas BTC ou USD', async () => {
+  const inputSignup = {
+    name: 'John Doe',
+    email: 'john.doe@gmail.com',
+    document: '97456321558',
+    password: 'asdQWE123',
+  };
+  const responseSignup = await axios.post(
+    'http://localhost:3000/signup',
+    inputSignup
+  );
+
+  const inputDeposit = {
+    accountId: responseSignup.data.accountId,
+    assetId: 'BRL',
+    quantity: 10,
+  };
+
+  const outputDeposit = await axios.post(`${BASE_URL}/deposit`, inputDeposit);
+  expect(outputDeposit.status).toBe(422);
+  expect(outputDeposit.data.error).toBe('Invalid assetId');
 });
